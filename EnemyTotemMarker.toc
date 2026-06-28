@@ -1,8 +1,8 @@
-## Interface: 50504
+## Interface: 20505
 ## Title: EnemyTotemMarker
-## Notes: Shows the totem icon + lifetime countdown above all enemy totem nameplates
-## Author: reisal
-## Version: 0.7.0
+## Notes: Enemy totem nameplate markers for TBC Classic 2.5.5
+## Author: reisal, TBC port
+## Version: 0.7.7b-tbc
 ## SavedVariables: EnemyTotemMarkerDB
 
 EnemyTotemMarker.lua
