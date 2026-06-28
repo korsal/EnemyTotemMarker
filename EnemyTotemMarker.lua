@@ -44,6 +44,35 @@ local TOTEM_DB = {
     [2894]   = 60,  -- Fire Elemental Totem
     [2062]   = 60,  -- Earth Elemental Totem
     [3599]   = 60,  -- Searing Totem
+    [8190]   = 60,  -- Magma Totem (fire pulse AoE)
+}
+
+-- Totem element (school) -> border color. Edit freely.
+local ELEMENT_COLOR = {
+    Fire  = { 1.00, 0.25, 0.10 }, -- orange-red
+    Earth = { 0.60, 0.40, 0.15 }, -- brown
+    Water = { 0.15, 0.55, 1.00 }, -- blue
+    Air   = { 0.70, 0.95, 1.00 }, -- pale cyan
+}
+local DEFAULT_BORDER_COLOR = { 0, 0, 0 } -- unknown / non-DB totems
+
+-- spellID -> element, used to tint each totem's border.
+local TOTEM_ELEMENT = {
+    [108269] = "Air",   -- Capacitor Totem
+    [8177]   = "Air",   -- Grounding Totem
+    [8143]   = "Earth", -- Tremor Totem
+    [2484]   = "Earth", -- Earthbind Totem
+    [51485]  = "Earth", -- Earthgrab Totem
+    [98008]  = "Air",   -- Spirit Link Totem
+    [108280] = "Water", -- Healing Tide Totem
+    [5394]   = "Water", -- Healing Stream Totem
+    [16190]  = "Water", -- Mana Tide Totem
+    [120668] = "Air",   -- Stormlash Totem
+    [114051] = "Air",   -- Windwalk Totem
+    [2894]   = "Fire",  -- Fire Elemental Totem
+    [2062]   = "Earth", -- Earth Elemental Totem
+    [3599]   = "Fire",  -- Searing Totem
+    [8190]   = "Fire",  -- Magma Totem
 }
 
 -- Localized creature type string for "Totem".
@@ -68,6 +97,7 @@ local markerPool = {}      -- recycled marker frames
 local iconByName = {}      -- localized totem name -> icon texture
 local durByName = {}       -- localized totem name -> lifetime seconds
 local importantByName = {} -- localized totem name -> true if important PvP totem
+local colorByName = {}     -- localized totem name -> element border color
 local startByGUID = {}     -- totem GUID -> first-seen GetTime()
 
 ------------------------------------------------------------
@@ -77,6 +107,9 @@ local function BuildTotemDB()
     wipe(iconByName)
     wipe(durByName)
     wipe(importantByName)
+    wipe(colorByName)
+
+    -- Durations, icons and the important-PvP flag from the timed DB.
     for spellID, duration in pairs(TOTEM_DB) do
         local name, _, icon = GetSpellInfo(spellID)
         if name and icon then
@@ -87,11 +120,32 @@ local function BuildTotemDB()
             end
         end
     end
+
+    -- Element border colors, resolved independently of TOTEM_DB so that
+    -- element-mapped totems get a colored border (and real icon) even
+    -- without a known lifetime.
+    for spellID, element in pairs(TOTEM_ELEMENT) do
+        local name, _, icon = GetSpellInfo(spellID)
+        if name then
+            colorByName[name] = ELEMENT_COLOR[element]
+            if icon and not iconByName[name] then
+                iconByName[name] = icon
+            end
+        end
+    end
 end
 
 ------------------------------------------------------------
 -- Marker pool
 ------------------------------------------------------------
+local function SetSolidColor(tex, r, g, b, a)
+    if tex.SetColorTexture then
+        tex:SetColorTexture(r, g, b, a)
+    else
+        tex:SetTexture(r, g, b, a)
+    end
+end
+
 local function MarkerOnUpdate(self, elapsed)
     self.throttle = (self.throttle or 0) - elapsed
     if self.throttle > 0 then return end
@@ -121,11 +175,7 @@ local function AcquireMarker()
         local border = marker:CreateTexture(nil, "BACKGROUND")
         border:SetPoint("TOPLEFT", -2, 2)
         border:SetPoint("BOTTOMRIGHT", 2, -2)
-        if border.SetColorTexture then
-            border:SetColorTexture(0, 0, 0, 1)
-        else
-            border:SetTexture(0, 0, 0, 1)
-        end
+        SetSolidColor(border, 0, 0, 0, 1)
         marker.border = border
 
         local icon = marker:CreateTexture(nil, "ARTWORK")
@@ -187,6 +237,10 @@ local function ShowMarkerForUnit(unit)
     local size = importantByName[name] and (MARKER_SIZE * IMPORTANT_SCALE) or MARKER_SIZE
     marker:SetSize(size, size)
     marker.icon:SetTexture(iconByName[name] or GENERIC_TOTEM_ICON)
+
+    local color = colorByName[name] or DEFAULT_BORDER_COLOR
+    SetSolidColor(marker.border, color[1], color[2], color[3], 1)
+
     marker:SetParent(nameplate)
     marker:ClearAllPoints()
     marker:SetPoint("BOTTOM", nameplate, "TOP", 0, MARKER_Y_OFFSET)
