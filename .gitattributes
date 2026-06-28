@@ -1,0 +1,8 @@
+# Normalize all text files to LF in the repo and in the working tree.
+* text=auto eol=lf
+
+# WoW addon source files are text.
+*.lua  text eol=lf
+*.toc  text eol=lf
+*.xml  text eol=lf
+*.md   text eol=lf
