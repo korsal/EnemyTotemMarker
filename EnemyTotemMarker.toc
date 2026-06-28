@@ -1,0 +1,7 @@
+## Interface: 50504
+## Title: EnemyTotemMarker
+## Notes: Shows the totem icon + lifetime countdown above all enemy totem nameplates
+## Author: reisal
+## Version: 0.4.0
+
+EnemyTotemMarker.lua
